@@ -1,13 +1,14 @@
-name: Build VEL Android APK
+name: Build Android APK
 
 on:
   push:
-    branches: [main, master]
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # Cancela automáticamente si pasa de 15 minutos para que no se quede colgado
 
     steps:
       - name: Checkout code
@@ -16,25 +17,22 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
-      - name: Check Android project
-        run: |
-          ls -la
-          ls -la android-vel
-          test -f android-vel/gradlew
-          test -f android-vel/settings.gradle.kts
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
-      - name: Build Debug APK with Gradle
-        run: |
-          chmod +x android-vel/gradlew
-          cd android-vel
-          ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Clean build cache
+        run: ./gradlew clean
 
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+        
       - name: Upload APK Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: vel-0.1-debug-apk
-          path: android-vel/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
